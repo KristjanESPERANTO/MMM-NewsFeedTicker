@@ -1,5 +1,4 @@
-/* Module: NewsFeedTicker
- * version 1.2.0
+/* Module: MMM-NewsFeedTicker
  *
  * ((modification of the default newsfeed module
  * By Michael Teeuw https://michaelteeuw.nl
