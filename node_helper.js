@@ -6,7 +6,6 @@
  */
 
 const NodeHelper = require("node_helper");
-const validUrl = require("valid-url");
 const Fetcher = require("./fetcher.js");
 
 module.exports = NodeHelper.create({
@@ -20,6 +19,15 @@ module.exports = NodeHelper.create({
 	socketNotificationReceived (notification, payload) {
 		if (notification === "ADD_FEED") {
 			this.createFetcher(payload.feed, payload.config);
+		}
+	},
+
+	isAllowedFeedUrl (url) {
+		try {
+			const parsedUrl = new URL(url);
+			return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+		} catch {
+			return false;
 		}
 	},
 
@@ -37,7 +45,7 @@ module.exports = NodeHelper.create({
 		const encoding = feed.encoding || "UTF-8";
 		const reloadInterval = feed.reloadInterval || config.reloadInterval || 5 * 60 * 1000;
 
-		if (!validUrl.isUri(url)) {
+		if (!this.isAllowedFeedUrl(url)) {
 			self.sendSocketNotification("INCORRECT_URL", url);
 			return;
 		}
