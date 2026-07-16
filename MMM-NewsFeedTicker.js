@@ -52,8 +52,6 @@ Module.register("MMM-NewsFeedTicker", {
 		encoding: "UTF-8" // ISO-8859-1
 	},
 
-	requiresversion: "2.1.0",
-
 	// Define required scripts.
 	getScripts () {
 		return ["moment.js"];
