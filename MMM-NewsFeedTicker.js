@@ -83,6 +83,7 @@ Module.register("MMM-NewsFeedTicker", {
 		this.loaded = false;
 		this.activeItem = 0;
 		this.scrollPosition = 0;
+		this.updateTimer = null;
 
 		this.registerFeeds();
 
@@ -215,24 +216,8 @@ Module.register("MMM-NewsFeedTicker", {
 				const headline = document.createElement("span");
 				headline.className = "headline";
 				tickerBody.style.animationDuration = `${Math.round(this.config.updateInterval / 1000)}s`;
-				tickerBody.addEventListener("animationend", () => {
-					headline.innerHTML = "";
-					this.scheduleUpdateInterval();
-				}, false);
 
 				headline.innerHTML = `<font color= #ffaa00>${moment(new Date(this.newsItems[this.activeItem].pubdate)).fromNow()}: &nbsp;` + `</font>${this.newsItems[this.activeItem].title}&nbsp; || &nbsp;${this.newsItems[this.activeItem].description}`;
-
-				function calcSpeed (speed) {
-					// Time = Distance/Speed
-					let spanSelector = document.querySelectorAll("headline"),
-						i;
-					for (i = 0; i < spanSelector.length; i++) {
-						const spanLength = spanSelector[i].offsetWidth,
-							timeTaken = spanLength / speed;
-						spanSelector[i].style.animationDuration = `${timeTaken}s`;
-					}
-				}
-				calcSpeed(100);
 
 
 				tickerBody.appendChild(headline);
@@ -377,14 +362,23 @@ Module.register("MMM-NewsFeedTicker", {
    * Schedule visual update.
    */
 	scheduleUpdateInterval () {
-		const self = this;
+		this.stopUpdateTimer();
+		this.updateDom(this.config.animationSpeed);
 
-		self.updateDom(self.config.animationSpeed);
+		if (this.newsItems.length <= 1) {
+			return;
+		}
 
-		timer = setInterval(() => {
-			self.activeItem++;
-			self.updateDom(self.config.animationSpeed);
+		this.updateTimer = setTimeout(() => {
+			this.activeItem++;
+			this.scheduleUpdateInterval();
 		}, this.config.updateInterval);
+	},
+	stopUpdateTimer () {
+		if (this.updateTimer) {
+			clearTimeout(this.updateTimer);
+			this.updateTimer = null;
+		}
 	},
 
 	/* capitalizeFirstLetter(string)
@@ -405,7 +399,7 @@ Module.register("MMM-NewsFeedTicker", {
 		// reset bottom bar alignment
 		document.getElementsByClassName("region top bar")[0].style.top = "0";
 		document.getElementsByClassName("region top bar")[0].style.top = "inherit";
-		if (!timer) {
+		if (!this.updateTimer) {
 			this.scheduleUpdateInterval();
 		}
 	},
@@ -473,8 +467,7 @@ Module.register("MMM-NewsFeedTicker", {
 			document.getElementsByClassName("region top bar")[0].style.bottom = "inherit";
 			document.getElementsByClassName("region top bar")[0].style.top = "-90px";
 		}
-		clearInterval(timer);
-		timer = null;
+		this.stopUpdateTimer();
 		Log.info(`${this.name} - showing ${this.isShowingDescription}`
 			? "article description"
 			: "full article");
