@@ -72,12 +72,11 @@ To change background color, add the following to you custom.css file:
 
 To remove background color, change to `background: none;`
 
-Some users are having issues with speed of the animation.
-Go to the following line in the MMM-NewsFeedTicker.js file and change the number `1000` to a lower number.
-(some users are finding that changing to 300 works best for them, adjust to your preference)
+If the ticker feels too slow or too fast, adjust `updateInterval` in your module config.
+The marquee duration now follows that value, so a lower interval scrolls and rotates items faster.
 
 ```js
-tickerBody.style.animationDuration = Math.round(this.config.updateInterval / 1000) + "s";
+updateInterval: 30 * 1000,
 ```
 
 ## Acknowledgements
