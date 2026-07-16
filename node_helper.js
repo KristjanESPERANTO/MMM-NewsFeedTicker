@@ -40,7 +40,7 @@ module.exports = NodeHelper.create({
 	 */
 	createFetcher (feed, config) {
 		const self = this;
-		// var defaultLogo = feed.image || "";
+		// const defaultLogo = feed.image || "";
 		const url = feed.url || "";
 		const encoding = feed.encoding || "UTF-8";
 		const reloadInterval = feed.reloadInterval || config.reloadInterval || 5 * 60 * 1000;

@@ -117,7 +117,7 @@ const Fetcher = function (url, reloadInterval, encoding, logFeedWarnings, defaul
 	 * Schedule the timer for the next update.
 	 */
 
-	var scheduleTimer = function () {
+	const scheduleTimer = function () {
 		// console.log('Schedule update timer.');
 		clearTimeout(reloadTimer);
 		reloadTimer = setTimeout(() => {
