@@ -15,11 +15,9 @@ The MMM-NewsFeedTickermodule is a [3rd Party Module](https://github.com/MagicMir
 To use this module, add it to the modules array in the 'config/config.js' file:
 
 ```js
-modules: [
   {
     module: "MMM-NewsFeedTicker",
     position: "bottom_bar",
-    //classes: "day_scheduler",
     config: {
       feeds: [
         {
@@ -40,7 +38,6 @@ modules: [
       ]
     }
   },
-]
 ```
 
 ## Install
@@ -49,6 +46,14 @@ modules: [
 cd ~/MagicMirror/modules
 git clone https://github.com/justjim1220/MMM-NewsFeedTicker
 cd MMM-NewsFeedTicker
+npm install
+```
+
+## Update
+
+```bash
+cd ~/MagicMirror/modules/MMM-NewsFeedTicker
+git pull
 npm install
 ```
 
