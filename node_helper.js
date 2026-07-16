@@ -1,5 +1,5 @@
-/* Magic Mirror
- * Node Helper: Newsfeed
+/* MagicMirror²
+ * Node Helper: MMM-NewsFeedTicker
  *
  * By Michael Teeuw https://michaelteeuw.nl
  * MIT Licensed.
