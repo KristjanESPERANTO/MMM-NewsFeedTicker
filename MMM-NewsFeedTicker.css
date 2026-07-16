@@ -6,7 +6,6 @@
 .MMM-NewsFeedTicker {
   width: 100%;
   height: 50px;
-  line-height: 100%;
   overflow: hidden;
   background: rgb(104, 9, 9); /* background color - change to 'none' if don't want */
 }
@@ -14,7 +13,6 @@
 .MMM-NewsFeedTicker .tickerbody {
   margin: 0 auto;
   width: 100%;
-  padding-top: 5px;
   position: relative;
   display: inline-block;
   white-space: nowrap;
@@ -25,8 +23,10 @@
 }
 
 .MMM-NewsFeedTicker .headline {
+  display: inline-block;
   font-size: 40px;
   font-weight: bold;
+  line-height: 50px;
 }
 
 .MMM-NewsFeedTicker .image {
