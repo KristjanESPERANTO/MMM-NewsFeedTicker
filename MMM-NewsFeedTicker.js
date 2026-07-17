@@ -430,6 +430,10 @@ Module.register("MMM-NewsFeedTicker", {
 	},
 
 	notificationReceived (notification, payload, sender) {
+		if (!notification || !notification.startsWith("ARTICLE_")) {
+			return;
+		}
+
 		Log.info(`${this.name} - received notification: ${notification}`);
 		if (notification == "ARTICLE_NEXT") {
 			const before = this.activeItem;
