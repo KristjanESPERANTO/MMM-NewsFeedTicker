@@ -14,6 +14,33 @@
  *
  */
 
+const RELATIVE_TIME_UNITS = [
+	["year", 31536000],
+	["month", 2592000],
+	["day", 86400],
+	["hour", 3600],
+	["minute", 60],
+	["second", 1]
+];
+const FALLBACK_RELATIVE_TIME_UNIT = RELATIVE_TIME_UNITS[RELATIVE_TIME_UNITS.length - 1];
+
+function formatRelativeTime (dateValue, locale) {
+	const date = new Date(dateValue);
+	if (Number.isNaN(date.getTime())) {
+		return "";
+	}
+
+	const diffInSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+	const [unit, unitSeconds] = RELATIVE_TIME_UNITS.find(([, seconds]) => Math.abs(diffInSeconds) >= seconds) || FALLBACK_RELATIVE_TIME_UNIT;
+	const value = Math.round(diffInSeconds / unitSeconds);
+	const preferredLocale = locale || "en";
+
+	try {
+		return new Intl.RelativeTimeFormat(preferredLocale, {numeric: "auto"}).format(value, unit);
+	} catch {
+		return new Intl.RelativeTimeFormat("en", {numeric: "auto"}).format(value, unit);
+	}
+}
 Module.register("MMM-NewsFeedTicker", {
 
 	// Default module config.
@@ -52,13 +79,16 @@ Module.register("MMM-NewsFeedTicker", {
 		encoding: "UTF-8" // ISO-8859-1
 	},
 
-	// Define required scripts.
-	getScripts () {
-		return ["moment.js"];
-	},
-
 	getStyles () {
 		return ["MMM-NewsFeedTicker.css"];
+	},
+
+	getLocale () {
+		return this.config.language || (typeof config !== "undefined" ? config.language : "en");
+	},
+
+	getRelativeTime (dateValue) {
+		return formatRelativeTime(dateValue, this.getLocale());
 	},
 
 	// Define required translations.
@@ -72,9 +102,6 @@ Module.register("MMM-NewsFeedTicker", {
 	// Define start sequence.
 	start () {
 		Log.info(`Starting module: ${this.name}`);
-
-		// Set locale.
-		moment.locale(config.language);
 
 		this.newsItems = [];
 		this.loaded = false;
@@ -105,6 +132,7 @@ Module.register("MMM-NewsFeedTicker", {
 	// Override dom generator.
 	getDom () {
 		const wrapper = document.createElement("div");
+		const activeItem = this.newsItems[this.activeItem];
 
 		if (this.config.feedUrl) {
 			wrapper.className = "bold normal";
@@ -122,16 +150,16 @@ Module.register("MMM-NewsFeedTicker", {
 				const sourceAndTimestamp = document.createElement("div");
 				// sourceAndTimestamp.className = "bold large dimmed";
 
-				if (this.config.showSourceTitle && this.newsItems[this.activeItem].sourceTitle !== "") {
-					sourceAndTimestamp.innerHTML = this.newsItems[this.activeItem].sourceTitle;
+				if (this.config.showSourceTitle && activeItem.sourceTitle !== "") {
+					sourceAndTimestamp.innerHTML = activeItem.sourceTitle;
 				}
-				if (this.config.showSourceTitle && this.newsItems[this.activeItem].sourceTitle !== "" && this.config.showPublishDate) {
+				if (this.config.showSourceTitle && activeItem.sourceTitle !== "" && this.config.showPublishDate) {
 					sourceAndTimestamp.innerHTML += " ";
 				}
 				if (this.config.showPublishDate) {
-					sourceAndTimestamp.innerHTML += moment(new Date(this.newsItems[this.activeItem].pubdate)).fromNow();
+					sourceAndTimestamp.innerHTML += this.getRelativeTime(activeItem.pubdate);
 				}
-				if (this.config.showSourceTitle && this.newsItems[this.activeItem].sourceTitle !== "" || this.config.showPublishDate) {
+				if ((this.config.showSourceTitle && activeItem.sourceTitle !== "") || this.config.showPublishDate) {
 					sourceAndTimestamp.innerHTML += ":";
 				}
 
@@ -141,8 +169,8 @@ Module.register("MMM-NewsFeedTicker", {
 			// Remove selected tags from the beginning of rss feed items (title or description)
 			if (this.config.removeStartTags == "title" || this.config.removeStartTags == "both") {
 				for (f = 0; f < this.config.startTags.length; f++) {
-					if (this.newsItems[this.activeItem].title.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
-						this.newsItems[this.activeItem].title = this.newsItems[this.activeItem].title.slice(this.config.startTags[f].length, this.newsItems[this.activeItem].title.length);
+					if (activeItem.title.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
+						activeItem.title = activeItem.title.slice(this.config.startTags[f].length, activeItem.title.length);
 					}
 				}
 			}
@@ -150,8 +178,8 @@ Module.register("MMM-NewsFeedTicker", {
 			if (this.config.removeStartTags == "description" || this.config.removeStartTags == "both") {
 				if (this.config.showDescription) {
 					for (f = 0; f < this.config.startTags.length; f++) {
-						if (this.newsItems[this.activeItem].description.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
-							this.newsItems[this.activeItem].title = this.newsItems[this.activeItem].description.slice(this.config.startTags[f].length, this.newsItems[this.activeItem].description.length);
+						if (activeItem.description.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
+							activeItem.title = activeItem.description.slice(this.config.startTags[f].length, activeItem.description.length);
 						}
 					}
 				}
@@ -160,15 +188,15 @@ Module.register("MMM-NewsFeedTicker", {
 			// Remove selected tags from the end of rss feed items (title or description)
 			if (this.config.removeEndTags) {
 				for (f = 0; f < this.config.endTags.length; f++) {
-					if (this.newsItems[this.activeItem].title.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
-						this.newsItems[this.activeItem].title = this.newsItems[this.activeItem].title.slice(0, -this.config.endTags[f].length);
+					if (activeItem.title.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
+						activeItem.title = activeItem.title.slice(0, -this.config.endTags[f].length);
 					}
 				}
 
 				if (this.config.showDescription) {
 					for (f = 0; f < this.config.endTags.length; f++) {
-						if (this.newsItems[this.activeItem].description.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
-							this.newsItems[this.activeItem].description = this.newsItems[this.activeItem].description.slice(0, -this.config.endTags[f].length);
+						if (activeItem.description.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
+							activeItem.description = activeItem.description.slice(0, -this.config.endTags[f].length);
 						}
 					}
 				}
@@ -188,7 +216,7 @@ Module.register("MMM-NewsFeedTicker", {
 				description.className = `light${!this.config.wrapDescription
 					? " no-wrap"
 					: ""}`;
-				const txtDesc = this.newsItems[this.activeItem].description;
+				const txtDesc = activeItem.description;
 				description.innerHTML = this.config.truncDescription
 					? txtDesc.length > this.config.lengthDescription
 						? `${txtDesc.substring(0, this.config.lengthDescription)}...`
@@ -203,7 +231,7 @@ Module.register("MMM-NewsFeedTicker", {
 					const image = document.createElement("img");
 					image.className = "image";
 					// display it as requested
-					image.src = this.newsItems[this.activeItem].logo;
+					image.src = activeItem.logo;
 					wrapper.appendChild(image);
 				}
 
@@ -214,7 +242,7 @@ Module.register("MMM-NewsFeedTicker", {
 				headline.className = "headline";
 				tickerBody.style.animationDuration = `${Math.round(this.config.updateInterval / 1000)}s`;
 
-				headline.innerHTML = `<font color= #ffaa00>${moment(new Date(this.newsItems[this.activeItem].pubdate)).fromNow()}: &nbsp;` + `</font>${this.newsItems[this.activeItem].title}&nbsp; || &nbsp;${this.newsItems[this.activeItem].description}`;
+				headline.innerHTML = `<font color= #ffaa00>${this.getRelativeTime(activeItem.pubdate)}: &nbsp;` + `</font>${activeItem.title}&nbsp; || &nbsp;${activeItem.description}`;
 
 
 				tickerBody.appendChild(headline);
@@ -233,8 +261,8 @@ Module.register("MMM-NewsFeedTicker", {
 				fullArticle.style.left = "0";
 				fullArticle.style.border = "none";
 				fullArticle.src = typeof this.newsItems[this.activeItem].url === "string"
-					? this.newsItems[this.activeItem].url
-					: this.newsItems[this.activeItem].url.href;
+					? activeItem.url
+					: activeItem.url.href;
 				fullArticle.style.zIndex = 1;
 				wrapper.appendChild(fullArticle);
 			}
