@@ -24,6 +24,13 @@ const RELATIVE_TIME_UNITS = [
 ];
 const FALLBACK_RELATIVE_TIME_UNIT = RELATIVE_TIME_UNITS[RELATIVE_TIME_UNITS.length - 1];
 
+/**
+ * Formats a date-like value as localized relative time (for example: "2 hours ago").
+ *
+ * @param {string|number|Date} dateValue Date input to format.
+ * @param {string} [locale] Preferred locale code (falls back to "en").
+ * @returns {string} Relative time string or an empty string for invalid dates.
+ */
 function formatRelativeTime (dateValue, locale) {
 	const date = new Date(dateValue);
 	if (Number.isNaN(date.getTime())) {
