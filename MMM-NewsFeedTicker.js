@@ -41,6 +41,41 @@ function formatRelativeTime (dateValue, locale) {
 		return new Intl.RelativeTimeFormat("en", {numeric: "auto"}).format(value, unit);
 	}
 }
+
+/**
+ * Removes configured prefixes from a text value.
+ *
+ * @param {string} text The source text.
+ * @param {string[]} tags Prefix tags to remove.
+ * @returns {string} The normalized text.
+ */
+function stripConfiguredStartTags (text, tags) {
+	let result = text;
+	for (const tag of tags) {
+		if (result.slice(0, tag.length) === tag) {
+			result = result.slice(tag.length);
+		}
+	}
+	return result;
+}
+
+/**
+ * Removes configured suffixes from a text value.
+ *
+ * @param {string} text The source text.
+ * @param {string[]} tags Suffix tags to remove.
+ * @returns {string} The normalized text.
+ */
+function stripConfiguredEndTags (text, tags) {
+	let result = text;
+	for (const tag of tags) {
+		if (result.slice(-tag.length) === tag) {
+			result = result.slice(0, -tag.length);
+		}
+	}
+	return result;
+}
+
 Module.register("MMM-NewsFeedTicker", {
 
 	// Default module config.
@@ -89,6 +124,41 @@ Module.register("MMM-NewsFeedTicker", {
 
 	getRelativeTime (dateValue) {
 		return formatRelativeTime(dateValue, this.getLocale());
+	},
+
+	/**
+	 * Applies configured start/end tag trimming to title and description.
+	 *
+	 * @param {{title?: string, description?: string}} item Feed item to normalize.
+	 * @returns {{title: string, description: string}} The normalized feed item.
+	 */
+	normalizeItemTags (item) {
+		const normalizedItem = item;
+
+		if (typeof normalizedItem.title !== "string") {
+			normalizedItem.title = "";
+		}
+		if (typeof normalizedItem.description !== "string") {
+			normalizedItem.description = "";
+		}
+
+		if (this.config.removeStartTags === "title" || this.config.removeStartTags === "both") {
+			normalizedItem.title = stripConfiguredStartTags(normalizedItem.title, this.config.startTags);
+		}
+
+		if (this.config.removeStartTags === "description" || this.config.removeStartTags === "both") {
+			normalizedItem.description = stripConfiguredStartTags(normalizedItem.description, this.config.startTags);
+		}
+
+		if (this.config.removeEndTags === "title" || this.config.removeEndTags === "both") {
+			normalizedItem.title = stripConfiguredEndTags(normalizedItem.title, this.config.endTags);
+		}
+
+		if (this.config.removeEndTags === "description" || this.config.removeEndTags === "both") {
+			normalizedItem.description = stripConfiguredEndTags(normalizedItem.description, this.config.endTags);
+		}
+
+		return normalizedItem;
 	},
 
 	// Define required translations.
@@ -164,42 +234,6 @@ Module.register("MMM-NewsFeedTicker", {
 				}
 
 				wrapper.appendChild(sourceAndTimestamp);
-			}
-
-			// Remove selected tags from the beginning of rss feed items (title or description)
-			if (this.config.removeStartTags == "title" || this.config.removeStartTags == "both") {
-				for (f = 0; f < this.config.startTags.length; f++) {
-					if (activeItem.title.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
-						activeItem.title = activeItem.title.slice(this.config.startTags[f].length, activeItem.title.length);
-					}
-				}
-			}
-
-			if (this.config.removeStartTags == "description" || this.config.removeStartTags == "both") {
-				if (this.config.showDescription) {
-					for (f = 0; f < this.config.startTags.length; f++) {
-						if (activeItem.description.slice(0, this.config.startTags[f].length) == this.config.startTags[f]) {
-							activeItem.title = activeItem.description.slice(this.config.startTags[f].length, activeItem.description.length);
-						}
-					}
-				}
-			}
-
-			// Remove selected tags from the end of rss feed items (title or description)
-			if (this.config.removeEndTags) {
-				for (f = 0; f < this.config.endTags.length; f++) {
-					if (activeItem.title.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
-						activeItem.title = activeItem.title.slice(0, -this.config.endTags[f].length);
-					}
-				}
-
-				if (this.config.showDescription) {
-					for (f = 0; f < this.config.endTags.length; f++) {
-						if (activeItem.description.slice(-this.config.endTags[f].length) == this.config.endTags[f]) {
-							activeItem.description = activeItem.description.slice(0, -this.config.endTags[f].length);
-						}
-					}
-				}
 			}
 
 			if (this.config.showSourceTicle) {
@@ -310,7 +344,7 @@ Module.register("MMM-NewsFeedTicker", {
 					const item = feedItems[i];
 					item.sourceTitle = this.titleForFeed(feed);
 					if (!(this.config.ignoreOldItems && Date.now() - new Date(item.pubdate) > this.config.ignoreOlderThan)) {
-						newsItems.push(item);
+						newsItems.push(this.normalizeItemTags(item));
 					}
 				}
 			}
